@@ -5,8 +5,9 @@ import telebot, threading, time
 
 ALERT_TIME = '19'
 with open('time.txt', 'r') as reader:
-    if reader.readline() != "":
-        ALERT_TIME = reader.readline()
+    tim = reader.readline()
+    if tim != "":
+        ALERT_TIME = tim
 g = Grab(log_file='out.html')
 
 user_data = []
