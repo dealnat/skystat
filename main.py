@@ -4,7 +4,9 @@ from datetime import datetime
 import telebot, threading, time
 
 ALERT_TIME = '19'
-
+with open('time.txt', 'r') as reader:
+    if reader.readline() != "":
+        ALERT_TIME = reader.readline()
 g = Grab(log_file='out.html')
 
 user_data = []
@@ -48,20 +50,30 @@ bot = telebot.TeleBot('1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8')
 def send_welcome(message):
     bot.reply_to(message, f'Я бот. Приятно познакомиться, {message.from_user.first_name}')
 @bot.message_handler(commands=['chtime'])
-def change_alert_time():
-    @bot.message_handler(content_types=['text'])
-    def get_text_messages(message):
-        if message.from_user.id == 266536993:
-            ALERT_TIME = message
+def change_alert_time(message):
+    commandl = message.text.split()
+    try:
+        if  int(commandl[1]) <= 23 and int(commandl[1]) >= 0:
+            global ALERT_TIME
+            ALERT_TIME = commandl[1]
+            f = open('time.txt', 'w')
+            f.write(ALERT_TIME)
+            f.close()
+            bot.send_message(message.from_user.id, f'Alert time changed to: {ALERT_TIME}')
+    except:
+        bot.send_message(message.from_user.id, 'Expected arguement')
+@bot.message_handler(commands=['shtime'])
+def change_alert_time(message):
+    global ALERT_TIME
+    bot.send_message(message.from_user.id, f'Alert time is: {ALERT_TIME}')
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
     if message.from_user.id == 266536993:
-        if message.text.lower() == 'привет':
-            bot.send_message(message.from_user.id, 'Привет!')
-        elif message.text.lower() == 'инфа':
+        if message.text.lower() == 'инфа':
             bot.send_message(message.from_user.id, ShowStatistics())
+
         else:
-            bot.send_message(message.from_user.id, 'Не понимаю, что это значит.')
+            bot.send_message(message.from_user.id, 'Invalid')
 my_timer = None
 def SendStat():
     bot.send_message(266536993, ShowStatistics())
