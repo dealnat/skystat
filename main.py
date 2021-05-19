@@ -47,6 +47,12 @@ bot = telebot.TeleBot('1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8')
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     bot.reply_to(message, f'Я бот. Приятно познакомиться, {message.from_user.first_name}')
+@bot.message_handler(commands=['chtime'])
+def change_alert_time():
+    @bot.message_handler(content_types=['text'])
+    def get_text_messages(message):
+        if message.from_user.id == 266536993:
+            ALERT_TIME = message
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
     if message.from_user.id == 266536993:

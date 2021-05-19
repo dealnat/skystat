@@ -1,0 +1,5 @@
+/venv/*
+*.html
+*.log
+/.idea/*
+db.txt
