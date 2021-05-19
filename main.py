@@ -1,10 +1,12 @@
 from grab import Grab
-import telebot, threading, time
 from bs4 import BeautifulSoup
+from datetime import datetime
+import telebot, threading, time
 g = Grab(log_file='out.html')
 user_data = []
 with open('db.txt', 'r') as reader:
     user_data = reader.readlines()
+user_data[0] = user_data[0].rstrip('\n')
 print(user_data)
 def ShowStatistics():
     try:
