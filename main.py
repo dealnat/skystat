@@ -2,12 +2,20 @@ from grab import Grab
 from bs4 import BeautifulSoup
 from datetime import datetime
 import telebot, threading, time
+
+ALERT_TIME = '19'
+
 g = Grab(log_file='out.html')
+
 user_data = []
 with open('db.txt', 'r') as reader:
     user_data = reader.readlines()
 user_data[0] = user_data[0].rstrip('\n')
-print(user_data)
+
+now = datetime.now()
+curr_time = now.strftime("%H")
+
+
 def ShowStatistics():
     try:
         g.setup(post={"user": f"{user_data[0]}", "passwd": f"{user_data[1]}"})
@@ -26,6 +34,7 @@ def ShowStatistics():
     dep_ch = my_dep.findChildren("td", recursive=False)
     days = soup.find("div", {'id': 'dv_user_info'})
     d_ch = days.findChildren("h3", recursive=False)
+
     resstr = ""
     for tag in dep_ch:
         resstr += tag.get_text()
@@ -52,8 +61,9 @@ def SendStat():
     bot.send_message(266536993, ShowStatistics())
 def make_thr():
     global my_timer
-    my_timer = threading.Timer(3600*24, make_thr)
+    my_timer = threading.Timer(3700, make_thr)
     my_timer.start()
     SendStat()
-make_thr()
+if curr_time == ALERT_TIME:
+    make_thr()
 bot.polling(none_stop=True)
