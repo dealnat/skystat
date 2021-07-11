@@ -3,7 +3,11 @@ from bs4 import BeautifulSoup
 import telebot,  threading
 import schedule, sqlite3
 
-bot = telebot.TeleBot('1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8')
+TOKEN = '1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8'
+DB_LOC = 'dbdir/users.db'
+ALERT_TIME = "17:00"
+ADMIN_ID = 266536993
+bot = telebot.TeleBot(TOKEN)
 g = Grab(log_file='d_out.html') #creating grab obj and say where to save page
 
 
@@ -14,7 +18,7 @@ def get_cred():
 
     return [uid,auth_log, auth_pass]
 def send_stat():
-    con = sqlite3.connect('dbdir/users.db')
+    con = sqlite3.connect(DB_LOC)
     cur = con.cursor()
     for row in cur.execute('SELECT * FROM userdata'):
         bot.send_message(row[0], get_stat(row[1],row[2]))
@@ -41,7 +45,7 @@ def get_stat(auth_log, auth_pass):
 
     print(resstr)
     return resstr
-schedule.every().day.at("14:03").do(send_stat)
+schedule.every().day.at(ALERT_TIME).do(send_stat)
 #schedule.every(1).minutes.do(send_stat)
 def thread_pending():
     while True:
@@ -55,26 +59,44 @@ while 1:
         bot.reply_to(message, f'Я бот. Приятно познакомиться, {message.from_user.first_name}, your id is {message.from_user.id}')
 
 
+    @bot.message_handler(commands=['userdel'])
+    def deluser(message):
+        if message.from_user.id == ADMIN_ID:
+            contr = sqlite3.connect(DB_LOC)
+            curcon = contr.cursor()
+            commandl = message.text.split()
+            curcon.execute("DELETE FROM userdata WHERE muid=(?)", (commandl[1],))
+            contr.commit()
+            bot.send_message(message.from_user.id, f"User with id {commandl[1]} succesfully deleted")
+        else:
+            bot.reply_to(message, "You are not allowed to execute this command")
+
+
     @bot.message_handler(commands=['useradd'])
     def adduser(message):
-        if message.from_user.id == 266536993:
-            contr = sqlite3.connect('dbdir/users.db')
+        if message.from_user.id == ADMIN_ID:
+            contr = sqlite3.connect(DB_LOC)
             curcon = contr.cursor()
             commandl = message.text.split()
             curcon.execute("INSERT INTO userdata VALUES(?, ?, ?)", (commandl[1], commandl[2], commandl[3]))
             contr.commit()
-            for row in curcon.execute('SELECT * FROM userdata'):
-                print(row)
-            print("\n")
-            bot.send_message(message.from_user.id, f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\");")
+            bot.send_message(message.from_user.id,
+                             f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\");")
         else:
-            bot.send_message(message.from_user.id, "You are not allowed to execute this command")
+            bot.reply_to(message, "You are not allowed to execute this command")
+
+
     @bot.message_handler(content_types=['text'])
     def get_text_messages(message):
-        if message.from_user.id == 266536993:
-            if message.text.lower() == 'инфа':
-                bot.send_message(message.from_user.id, get_stat())
-
-            else:
-                bot.send_message(message.from_user.id, 'Invalid')
+        if message.text.lower() == 'инфа':
+            contr = sqlite3.connect(DB_LOC)
+            curcon = contr.cursor()
+            for datalist in curcon.execute('SELECT * FROM userdata WHERE muid=(?)', (message.from_user.id,)):
+                print(len(datalist))
+                if len(datalist) != 0:
+                    bot.send_message(message.from_user.id, get_stat(datalist[1], datalist[2]))
+                else:
+                    bot.send_message(message.from_user.id, "Your id was not found in database")
+        else:
+            bot.send_message(message.from_user.id, 'Invalid')
     bot.polling()
