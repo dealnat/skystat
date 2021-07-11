@@ -1,42 +1,36 @@
 from grab import Grab
 from bs4 import BeautifulSoup
-from datetime import datetime
-import telebot, threading, time
+import telebot,  threading
+import schedule, sqlite3
 
-ALERT_TIME = '19'
-with open('time.txt', 'r') as reader:
-    tim = reader.readline()
-    if tim != "":
-        ALERT_TIME = tim
-g = Grab(log_file='out.html')
-
-user_data = []
-with open('db.txt', 'r') as reader:
-    user_data = reader.readlines()
-user_data[0] = user_data[0].rstrip('\n')
-
-now = datetime.now()
-curr_time = now.strftime("%H")
+bot = telebot.TeleBot('1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8')
+g = Grab(log_file='d_out.html') #creating grab obj and say where to save page
 
 
-def ShowStatistics():
-    try:
-        g.setup(post={"user": f"{user_data[0]}", "passwd": f"{user_data[1]}"})
-        g.go('https://balakleya.skystat.com/index.cgi')
-    except:
-        time.sleep(1)
-        print("Error ocurred")
-        g.setup(post={"user": f"{user_data[0]}", "passwd": f"{user_data[1]}"})
-        g.go('https://balakleya.skystat.com/index.cgi')
+def get_cred():
+    uid = 0
+    auth_log = ""
+    auth_pass = ""
 
+    return [uid,auth_log, auth_pass]
+def send_stat():
+    con = sqlite3.connect('dbdir/users.db')
+    cur = con.cursor()
+    for row in cur.execute('SELECT * FROM userdata'):
+        bot.send_message(row[0], get_stat(row[1],row[2]))
+    con.close()
+def get_stat(auth_log, auth_pass):
+    g.setup(post={"user": f"{auth_log}" , "passwd": f"{auth_pass}"} ) #adding data to post-request
+    g.go('https://balakleya.skystat.com/index.cgi') #go to the mainpage
 
-    f = open('out.html', "r")
+    f = open('d_out.html', "r")
     text = f.read()
     soup = BeautifulSoup(text, 'html.parser')
     my_dep = soup.find("tr", {"class": "odd"})
     dep_ch = my_dep.findChildren("td", recursive=False)
     days = soup.find("div", {'id': 'dv_user_info'})
     d_ch = days.findChildren("h3", recursive=False)
+    f.close()
 
     resstr = ""
     for tag in dep_ch:
@@ -44,45 +38,43 @@ def ShowStatistics():
     resstr += "\n"
     for tag in d_ch:
         resstr += tag.get_text()
+
+    print(resstr)
     return resstr
+schedule.every().day.at("14:03").do(send_stat)
+#schedule.every(1).minutes.do(send_stat)
+def thread_pending():
+    while True:
+        schedule.run_pending()
+thread = threading.Thread(target=thread_pending)
+thread.start()
 
-bot = telebot.TeleBot('1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8')
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.reply_to(message, f'Я бот. Приятно познакомиться, {message.from_user.first_name}')
-@bot.message_handler(commands=['chtime'])
-def change_alert_time(message):
-    commandl = message.text.split()
-    try:
-        if  int(commandl[1]) <= 23 and int(commandl[1]) >= 0:
-            global ALERT_TIME
-            ALERT_TIME = commandl[1]
-            f = open('time.txt', 'w')
-            f.write(ALERT_TIME)
-            f.close()
-            bot.send_message(message.from_user.id, f'Alert time changed to: {ALERT_TIME}')
-    except:
-        bot.send_message(message.from_user.id, 'Expected arguement')
-@bot.message_handler(commands=['shtime'])
-def change_alert_time(message):
-    global ALERT_TIME
-    bot.send_message(message.from_user.id, f'Alert time is: {ALERT_TIME}')
-@bot.message_handler(content_types=['text'])
-def get_text_messages(message):
-    if message.from_user.id == 266536993:
-        if message.text.lower() == 'инфа':
-            bot.send_message(message.from_user.id, ShowStatistics())
+while 1:
+    @bot.message_handler(commands=['start', 'help'])
+    def send_welcome(message):
+        bot.reply_to(message, f'Я бот. Приятно познакомиться, {message.from_user.first_name}, your id is {message.from_user.id}')
 
+
+    @bot.message_handler(commands=['useradd'])
+    def adduser(message):
+        if message.from_user.id == 266536993:
+            contr = sqlite3.connect('dbdir/users.db')
+            curcon = contr.cursor()
+            commandl = message.text.split()
+            curcon.execute("INSERT INTO userdata VALUES(?, ?, ?)", (commandl[1], commandl[2], commandl[3]))
+            contr.commit()
+            for row in curcon.execute('SELECT * FROM userdata'):
+                print(row)
+            print("\n")
+            bot.send_message(message.from_user.id, f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\");")
         else:
-            bot.send_message(message.from_user.id, 'Invalid')
-my_timer = None
-def SendStat():
-    bot.send_message(266536993, ShowStatistics())
-def make_thr():
-    global my_timer
-    my_timer = threading.Timer(3700, make_thr)
-    my_timer.start()
-    SendStat()
-if curr_time == ALERT_TIME:
-    make_thr()
-bot.polling(none_stop=True)
+            bot.send_message(message.from_user.id, "You are not allowed to execute this command")
+    @bot.message_handler(content_types=['text'])
+    def get_text_messages(message):
+        if message.from_user.id == 266536993:
+            if message.text.lower() == 'инфа':
+                bot.send_message(message.from_user.id, get_stat())
+
+            else:
+                bot.send_message(message.from_user.id, 'Invalid')
+    bot.polling()

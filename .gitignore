@@ -3,3 +3,6 @@
 *.log
 /.idea/*
 db.txt
+/dbdir/*
+debug.py
+test_sch.py

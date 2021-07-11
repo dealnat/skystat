@@ -1,2 +1,4 @@
+pycurl
+schedule
 grab
 bs4
