@@ -54,7 +54,17 @@ while 1:
     def send_welcome(message):
         bot.reply_to(message, f'Я бот. Приятно познакомиться, {message.from_user.first_name}, your id is {message.from_user.id}')
 
-
+    @bot.message_handler(commands=['userdel'])
+    def deluser(message):
+        if message.from_user.id == 266536993:
+            contr = sqlite3.connect('dbdir/users.db')
+            curcon = contr.cursor()
+            commandl = message.text.split()
+            curcon.execute("DELETE FROM userdata WHERE muid=(?)", (commandl[1],))
+            contr.commit()
+            bot.send_message(message.from_user.id, f"User with id {commandl[1]} succesfully deleted")
+        else:
+            bot.reply_to(message, "You are not allowed to execute this command")
     @bot.message_handler(commands=['useradd'])
     def adduser(message):
         if message.from_user.id == 266536993:
@@ -63,19 +73,20 @@ while 1:
             commandl = message.text.split()
             curcon.execute("INSERT INTO userdata VALUES(?, ?, ?)", (commandl[1], commandl[2], commandl[3]))
             contr.commit()
-            for row in curcon.execute('SELECT * FROM userdata'):
-                print(row)
-            print("\n")
             bot.send_message(message.from_user.id, f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\");")
         else:
-            bot.send_message(message.from_user.id, "You are not allowed to execute this command")
+            bot.reply_to(message, "You are not allowed to execute this command")
     @bot.message_handler(content_types=['text'])
     def get_text_messages(message):
-        if message.from_user.id == 266536993:
-            if message.text.lower() == 'инфа':
-                bot.send_message(message.from_user.id, get_stat())
-
-            else:
-                bot.send_message(message.from_user.id, 'Invalid')
+        if message.text.lower() == 'инфа':
+            contr = sqlite3.connect('dbdir/users.db')
+            curcon = contr.cursor()
+            for datalist in curcon.execute('SELECT * FROM userdata WHERE muid=(?)', (message.from_user.id,)):
+                if datalist[0]:
+                     bot.send_message(message.from_user.id, get_stat(datalist[1], datalist[2]))
+                else:
+                    bot.reply_to(message, "Your id was not found in database")
+        else:
+            bot.send_message(message.from_user.id, 'Invalid')
     bot.polling()
 
