@@ -76,6 +76,28 @@ while 1:
             bot.send_message(message.from_user.id, f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\");")
         else:
             bot.reply_to(message, "You are not allowed to execute this command")
+    @bot.message_handler(commands=['userupd'])
+    def upduser(message):
+        contr = sqlite3.connect('dbdir/users.db')
+        curcon = contr.cursor()
+        commandl = message.text.split()
+        if commandl[1] == '.':
+            if commandl[2] == '.':
+                curcon.execute("UPDATE userdata SET sky_pass=(?) WHERE muid=(?)", (commandl[3],message.from_user.id,))
+            elif commandl[3] == '.':
+                curcon.execute("UPDATE userdata SET sky_login=(?) WHERE muid=(?)", (commandl[2], message.from_user.id,))
+            else:
+                curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)", (commandl[2], commandl[3], message.from_user.id,))
+        else:
+            if message.from_user.id == 266536993:
+                if commandl[2] == '.':
+                    curcon.execute("UPDATE userdata SET sky_pass=(?) WHERE muid=(?)", (commandl[3], commandl[1],))
+                elif commandl[3] == '.':
+                    curcon.execute("UPDATE userdata SET sky_login=(?) WHERE muid=(?)", (commandl[2], commandl[1],))
+                else:
+                    curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)",
+                                   (commandl[2], commandl[3], commandl[1],))
+        contr.commit()
     @bot.message_handler(content_types=['text'])
     def get_text_messages(message):
         if message.text.lower() == 'инфа':

@@ -11,12 +11,6 @@ bot = telebot.TeleBot(TOKEN)
 g = Grab(log_file='d_out.html') #creating grab obj and say where to save page
 
 
-def get_cred():
-    uid = 0
-    auth_log = ""
-    auth_pass = ""
-
-    return [uid,auth_log, auth_pass]
 def send_stat():
     con = sqlite3.connect(DB_LOC)
     cur = con.cursor()
@@ -46,7 +40,6 @@ def get_stat(auth_log, auth_pass):
     print(resstr)
     return resstr
 schedule.every().day.at(ALERT_TIME).do(send_stat)
-#schedule.every(1).minutes.do(send_stat)
 def thread_pending():
     while True:
         schedule.run_pending()
@@ -86,6 +79,29 @@ while 1:
             bot.reply_to(message, "You are not allowed to execute this command")
 
 
+    @bot.message_handler(commands=['userupd'])
+    def upduser(message):
+        contr = sqlite3.connect(DB_LOC)
+        curcon = contr.cursor()
+        commandl = message.text.split()
+        if commandl[1] == '.':
+            if commandl[2] == '.':
+                curcon.execute("UPDATE userdata SET sky_pass=(?) WHERE muid=(?)", (commandl[3], message.from_user.id,))
+            elif commandl[3] == '.':
+                curcon.execute("UPDATE userdata SET sky_login=(?) WHERE muid=(?)", (commandl[2], message.from_user.id,))
+            else:
+                curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)",
+                               (commandl[2], commandl[3], message.from_user.id,))
+        else:
+            if message.from_user.id == ADMIN_ID:
+                if commandl[2] == '.':
+                    curcon.execute("UPDATE userdata SET sky_pass=(?) WHERE muid=(?)", (commandl[3], commandl[1],))
+                elif commandl[3] == '.':
+                    curcon.execute("UPDATE userdata SET sky_login=(?) WHERE muid=(?)", (commandl[2], commandl[1],))
+                else:
+                    curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)",
+                                   (commandl[2], commandl[3], commandl[1],))
+        contr.commit()
     @bot.message_handler(content_types=['text'])
     def get_text_messages(message):
         if message.text.lower() == 'инфа':
