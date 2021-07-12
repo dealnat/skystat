@@ -101,6 +101,9 @@ while 1:
                 else:
                     curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)",
                                    (commandl[2], commandl[3], commandl[1],))
+            else:
+                bot.send_message(message.from_user.id, "You are not allowed to execute this command this way. Try type "
+                                                       ". as first arguement")
         contr.commit()
     @bot.message_handler(content_types=['text'])
     def get_text_messages(message):
