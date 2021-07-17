@@ -10,7 +10,7 @@ skyline_gopath = 'https://balakleya.skystat.com/index.cgi'
 bill_gopath = 'https://bill.univ.kiev.ua/index.php?act_id=access'
 ADMIN_ID = 266536993
 bot = telebot.TeleBot(TOKEN)
-g = Grab(log_file='d_out.html') #creating grab obj and say where to save page
+
 
 
 def send_stat():
@@ -21,6 +21,7 @@ def send_stat():
     con.close()
 def get_stat(auth_log, auth_pass, isp):
     if(isp.lower() == 'skyline'):
+        g = Grab(log_file='d_out.html')  # creating grab obj and say where to save page
         g.setup(post={"user": f"{auth_log}" , "passwd": f"{auth_pass}"} ) #adding data to post-request
         g.go(skyline_gopath) #go to the mainpage
         f = open('d_out.html', "r")
@@ -38,6 +39,7 @@ def get_stat(auth_log, auth_pass, isp):
         for tag in d_ch:
             balance += tag.get_text()
     elif isp.lower() == 'bill':
+        g = Grab(log_file='bill_out.html')  # creating grab obj and say where to save page
         g.setup(post={"login": f"{auth_log}" , "password": f"{auth_pass}"})
         g.go(bill_gopath)
         f = open('bill_out.html', "r", encoding="cp1251")
@@ -82,10 +84,10 @@ while 1:
             contr = sqlite3.connect(DB_LOC)
             curcon = contr.cursor()
             commandl = message.text.split()
-            curcon.execute("INSERT INTO userdata VALUES(?, ?, ?)", (commandl[1], commandl[2], commandl[3]))
+            curcon.execute("INSERT INTO userdata VALUES(?, ?, ?, ?)", (commandl[1], commandl[2], commandl[3], commandl[4],))
             contr.commit()
             bot.send_message(message.from_user.id,
-                             f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\");")
+                             f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\"),\"{commandl[4]}\");")
         else:
             bot.reply_to(message, "You are not allowed to execute this command")
 
@@ -97,20 +99,20 @@ while 1:
         commandl = message.text.split()
         if commandl[1] == '.':
             if commandl[2] == '.':
-                curcon.execute("UPDATE userdata SET sky_pass=(?) WHERE muid=(?)", (commandl[3], message.from_user.id,))
+                curcon.execute("UPDATE userdata SET passwd=(?) WHERE muid=(?)", (commandl[3], message.from_user.id,))
             elif commandl[3] == '.':
-                curcon.execute("UPDATE userdata SET sky_login=(?) WHERE muid=(?)", (commandl[2], message.from_user.id,))
+                curcon.execute("UPDATE userdata SET login=(?) WHERE muid=(?)", (commandl[2], message.from_user.id,))
             else:
-                curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)",
+                curcon.execute("UPDATE userdata SET login=(?), passwd(?) WHERE muid=(?)",
                                (commandl[2], commandl[3], message.from_user.id,))
         else:
             if message.from_user.id == ADMIN_ID:
                 if commandl[2] == '.':
-                    curcon.execute("UPDATE userdata SET sky_pass=(?) WHERE muid=(?)", (commandl[3], commandl[1],))
+                    curcon.execute("UPDATE userdata SET passwd=(?) WHERE muid=(?)", (commandl[3], commandl[1],))
                 elif commandl[3] == '.':
-                    curcon.execute("UPDATE userdata SET sky_login=(?) WHERE muid=(?)", (commandl[2], commandl[1],))
+                    curcon.execute("UPDATE userdata SET login=(?) WHERE muid=(?)", (commandl[2], commandl[1],))
                 else:
-                    curcon.execute("UPDATE userdata SET sky_login=(?), sky_pass(?) WHERE muid=(?)",
+                    curcon.execute("UPDATE userdata SET login=(?), passwd(?) WHERE muid=(?)",
                                    (commandl[2], commandl[3], commandl[1],))
             else:
                 bot.send_message(message.from_user.id, "You are not allowed to execute this command this way. Try type "
