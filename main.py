@@ -3,9 +3,11 @@ from bs4 import BeautifulSoup
 import telebot,  threading
 import schedule, sqlite3
 
-TOKEN = '1650821709:AAF0OrGdGAjjRvERGUCFu7ByarMAliOX7w8'
-DB_LOC = 'dbdir/users.db'
-ALERT_TIME = "17:00"
+TOKEN = '1830250329:AAGEG6Atuq3g49ztoFHt9j9cDkqDc6R3YaI'
+DB_LOC = 'dbdir/new_test.db'
+ALERT_TIME = "01:32"
+skyline_gopath = 'https://balakleya.skystat.com/index.cgi'
+bill_gopath = 'https://bill.univ.kiev.ua/index.php?act_id=access'
 ADMIN_ID = 266536993
 bot = telebot.TeleBot(TOKEN)
 g = Grab(log_file='d_out.html') #creating grab obj and say where to save page
@@ -15,30 +17,39 @@ def send_stat():
     con = sqlite3.connect(DB_LOC)
     cur = con.cursor()
     for row in cur.execute('SELECT * FROM userdata'):
-        bot.send_message(row[0], get_stat(row[1],row[2]))
+        bot.send_message(row[0], get_stat(row[1],row[2],row[3]))
     con.close()
-def get_stat(auth_log, auth_pass):
-    g.setup(post={"user": f"{auth_log}" , "passwd": f"{auth_pass}"} ) #adding data to post-request
-    g.go('https://balakleya.skystat.com/index.cgi') #go to the mainpage
-
-    f = open('d_out.html', "r")
-    text = f.read()
-    soup = BeautifulSoup(text, 'html.parser')
-    my_dep = soup.find("tr", {"class": "odd"})
-    dep_ch = my_dep.findChildren("td", recursive=False)
-    days = soup.find("div", {'id': 'dv_user_info'})
-    d_ch = days.findChildren("h3", recursive=False)
-    f.close()
-
-    resstr = ""
-    for tag in dep_ch:
-        resstr += tag.get_text()
-    resstr += "\n"
-    for tag in d_ch:
-        resstr += tag.get_text()
-
-    print(resstr)
-    return resstr
+def get_stat(auth_log, auth_pass, isp):
+    if(isp.lower() == 'skyline'):
+        g.setup(post={"user": f"{auth_log}" , "passwd": f"{auth_pass}"} ) #adding data to post-request
+        g.go(skyline_gopath) #go to the mainpage
+        f = open('d_out.html', "r")
+        text = f.read()
+        soup = BeautifulSoup(text, 'html.parser')
+        my_dep = soup.find("tr", {"class": "odd"})
+        dep_ch = my_dep.findChildren("td", recursive=False)
+        days = soup.find("div", {'id': 'dv_user_info'})
+        d_ch = days.findChildren("h3", recursive=False)
+        f.close()
+        balance = ""
+        for tag in dep_ch:
+            balance += tag.get_text()
+        balance += "\n"
+        for tag in d_ch:
+            balance += tag.get_text()
+    elif isp.lower() == 'bill':
+        g.setup(post={"login": f"{auth_log}" , "password": f"{auth_pass}"})
+        g.go(bill_gopath)
+        f = open('bill_out.html', "r", encoding="cp1251")
+        text = f.read()
+        soup = BeautifulSoup(text, 'html.parser')
+        font_params = soup.find_all('font')
+        balance = font_params[1].text
+        print(balance.split()[0])
+        balance += f"\nінтернету залишилось на {int(float(balance.split()[0]) / 2.5)} днів"
+        f.close()
+    print(balance)
+    return balance
 schedule.every().day.at(ALERT_TIME).do(send_stat)
 def thread_pending():
     while True:
@@ -113,7 +124,7 @@ while 1:
             for datalist in curcon.execute('SELECT * FROM userdata WHERE muid=(?)', (message.from_user.id,)):
                 print(len(datalist))
                 if len(datalist) != 0:
-                    bot.send_message(message.from_user.id, get_stat(datalist[1], datalist[2]))
+                    bot.send_message(message.from_user.id, get_stat(datalist[1], datalist[2], datalist[3]))
                 else:
                     bot.send_message(message.from_user.id, "Your id was not found in database")
         else:
