@@ -1,1 +1,10 @@
 This project will help me to control my balance
+
+This repo contains demopy.service for systemd. This service start python script after boot and restart after fail automatically.
+You have to execute this command:
+$ sudo loginctl enable-linger $USER
+Also this service configured for my locations, so you need to change them.
+Service should be contained in ~/.config/systemd/user/demopy.service
+$ systemctl --user enable demopy	#enables autostart
+
+
