@@ -1,0 +1,11 @@
+[Unit]
+# Human readable name of the unit
+Description=Python Demo Servic
+
+[Service]
+# Command to execute when the service is started
+ExecStart=/home/host/test/skystat/venv/bin/python /home/host/test/skystat/main.py
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+[Install]
+WantedBy=default.target

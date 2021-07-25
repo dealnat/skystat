@@ -5,10 +5,12 @@ import telebot,  threading, schedule, sqlite3
 
 TOKEN = '1830250329:AAGEG6Atuq3g49ztoFHt9j9cDkqDc6R3YaI'
 DB_LOC = 'dbdir/anodb.db'
+
 ADMIN_ID = 266536993
 skyline_gopath = 'https://balakleya.skystat.com/index.cgi'
 bill_gopath = 'https://bill.univ.kiev.ua/index.php?act_id=access'
 bot = telebot.TeleBot(TOKEN)
+
 g = Grab(log_file='d_out.html') #creating grab obj and say where to save page
 users = []
 class User():
@@ -56,6 +58,7 @@ class User():
         self.alert  = ALERT
         schedule.every().day.at(self.alert).do(self.sendm)
 
+
     def __del__(self):
         print('Destructor called, User deleted.')
 def create_users():
@@ -65,7 +68,9 @@ def create_users():
     con = sqlite3.connect(DB_LOC)
     cur = con.cursor()
     for row in cur.execute('SELECT * FROM userdata'):
+
         users.append(User(row[0],row[1],row[2],row[3],row[4]))
+
 def thread_pending():
     while True:
         schedule.run_pending()
@@ -103,6 +108,7 @@ while 1:
             bot.send_message(message.from_user.id,
                              f"User added with this data VALUES({commandl[1]},\"{commandl[2]}\",\"{commandl[3]}\",\"{commandl[4]}\",\"{commandl[5]}\");")
             create_users()
+
         else:
             bot.reply_to(message, "You are not allowed to execute this command")
 
