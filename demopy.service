@@ -4,7 +4,8 @@ Description=Python Demo Servic
 
 [Service]
 # Command to execute when the service is started
-ExecStart=/home/host/test/skystat/venv/bin/python /home/host/test/skystat/main.py
+EnvironmentFile=/etc/.pyscrarg
+ExecStart=/home/host/test/skystat/venv/bin/python /home/host/onemoredir/skystat/main.py $ARG1 $ARG2 $ARG3
 Environment=PYTHONUNBUFFERED=1
 Restart=on-failure
 [Install]
