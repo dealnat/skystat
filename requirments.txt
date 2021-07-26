@@ -1,4 +1,6 @@
 pycurl
+wheel
 schedule
 grab
 bs4
+PyTelegramBotAPI
